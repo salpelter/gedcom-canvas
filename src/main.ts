@@ -1,33 +1,23 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
-
-// TODO: rename classes and interfaces
-
-interface MyPluginSettings {
-	mySetting: string;
-}
-
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
-}
+import { App, Editor, ItemView, MarkdownView, Modal, Plugin } from 'obsidian';
+import { CanvasNode, CanvasView, CanvasViewCanvas } from 'obsidian-typings';
 
 export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+
+	getCurrentCanvasView(): CanvasView | null {
+		const view = this.app.workspace.getActiveViewOfType(ItemView);
+		if (view?.getViewType() !== 'canvas')
+			return null
+
+		// safe cast via unknown to satisfy TypeScript structural mismatch warning
+		return view as unknown as CanvasView;
+	}
+
+	getCurrentCanvas(): CanvasViewCanvas | null {
+		return this.getCurrentCanvasView()?.canvas || null;
+	}
 
 	// onload() runs whenever the user starts using the plugin in Obsidian, this is where you'll configure most of the plugin's capabilities
 	async onload() {
-		await this.loadSettings();
-
-		// creates an icon in the left ribbon that shows a notice on click
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Show a notice', (_evt: MouseEvent) => {
-			new Notice('This is a notice!');
-		});
-
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
-
-		// adds a status bar item to the bottom of the app (does not work on mobile)
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Sample status bar text');
-
 		// adds a simple command that can be triggered anywhere
 		this.addCommand({
 			id: 'open-sample-modal-simple',
@@ -71,31 +61,57 @@ export default class MyPlugin extends Plugin {
 			}
 		});
 
-		// adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addCommand({
+			id: 'add-node',
+			name: 'Add a node',
+			checkCallback: (checking: boolean) => {
+
+				const canvas = this.getCurrentCanvas();
+
+				if (canvas) {
+
+					if (!checking) {
+						// @ts-ignore
+						const node: CanvasNode = canvas.createTextNode({
+							pos: {
+								x: 0,
+								y: 0,
+								height: 300,
+								width: 300,
+							},
+							size: {
+								x: 0,
+								y: 0,
+								height: 300,
+								width: 300,
+							},
+							text: "",
+							focus: true,
+							save: true,
+						});
+
+						canvas.addNode(node);
+						canvas.requestSave();
+
+						if (!node)
+							return;
+					}
+
+					return true;
+				}
+				return false;
+			}
+		})
 
 		// if the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin),
 		// using this function will automatically remove the event listener when this plugin is disabled.
 		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
 			console.log('A click has just been triggered.', evt); // this will be called any time a click event happens on the document
 		});
-
-		// when registering intervals, this function will automatically clear the interval when the plugin is disabled
-		this.registerInterval(window.setInterval(() => console.log('5 minute interval has passed.'), 5 * 60 * 1000));
 	}
 
 	// onunload() runs when the plugin is disabled, any resources that your plugin is using must be released here to avoid affecting the performance of Obsidian after your plugin has been disabled
-	onunload() {
-
-	}
-
-	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-	}
-
-	async saveSettings() {
-		await this.saveData(this.settings);
-	}
+	onunload() { }
 }
 
 class SampleModal extends Modal {
@@ -111,31 +127,5 @@ class SampleModal extends Modal {
 	onClose() {
 		const { contentEl } = this;
 		contentEl.empty();
-	}
-}
-
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
-
-	constructor(app: App, plugin: MyPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		const { containerEl } = this;
-
-		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
-			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
-				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
-					await this.plugin.saveSettings();
-				}));
 	}
 }
