@@ -1,5 +1,5 @@
 import { App, Editor, ItemView, MarkdownView, Modal, Plugin } from 'obsidian';
-import { CanvasNode, CanvasView, CanvasViewCanvas } from 'obsidian-typings';
+import { CanvasViewCanvasNode, CanvasView, CanvasViewCanvas } from 'obsidian-typings';
 
 export default class MyPlugin extends Plugin {
 
@@ -72,16 +72,12 @@ export default class MyPlugin extends Plugin {
 
 					if (!checking) {
 						// @ts-ignore
-						const node: CanvasNode = canvas.createTextNode({
+						const node: CanvasViewCanvasNode = canvas.createTextNode({
 							pos: {
 								x: 0,
 								y: 0,
-								height: 300,
-								width: 300,
 							},
 							size: {
-								x: 0,
-								y: 0,
 								height: 300,
 								width: 300,
 							},
