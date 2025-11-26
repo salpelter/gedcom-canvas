@@ -3,11 +3,11 @@
     "baseUrl": ".",
     "inlineSourceMap": true,
     "inlineSources": true,
-    "module": "ESNext",
-    "target": "ES6",
+    "module": "NodeNext",
+    "target": "ES2022",
+    "moduleResolution": "NodeNext",
     "allowJs": true,
     "noImplicitAny": true,
-    "moduleResolution": "node",
     "importHelpers": true,
     "isolatedModules": true,
     "strictNullChecks": true,
@@ -18,7 +18,8 @@
       "ES7"
     ],
     "types": [
-      "obsidian-typings"
+      "obsidian-typings",
+      "node"
     ],
     "paths": {
       "obsidian-typings/implementations": [
