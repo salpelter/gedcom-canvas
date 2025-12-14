@@ -28,5 +28,8 @@
 		"tslib": "2.4.0",
 		"tsx": "^4.20.6",
 		"typescript": "^5.9.3"
+	},
+	"dependencies": {
+		"read-gedcom": "^0.3.2"
 	}
 }

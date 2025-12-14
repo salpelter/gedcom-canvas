@@ -1,12 +1,25 @@
 import * as fs from 'node:fs';
 import * as readline from 'node:readline';
 import { Node } from './models/Node';
+import { readGedcom } from 'read-gedcom';
 
 async function main() {
     const lines: string[] = await readFile('src/sample-family-tree.ged')
 
     const nodes: Node[] = parseGedcom(lines);
-    console.log(nodes);
+    // console.log(nodes);
+
+    fs.readFile('src/sample-family-tree.ged', (error, buffer) => {
+        if (error)
+            throw error;
+
+        const gedcom = readGedcom(buffer.buffer as ArrayBuffer);
+
+        const family = gedcom.getFamilyRecord('@F1@');
+        const husbandParts = family.getHusband().getIndividualRecord().getName().valueAsParts()
+        const husbandName = husbandParts.at(0)?.filter(Boolean).join(' ') ?? ''; // to exclude undefined suffix
+        console.log(husbandName);
+    });
 }
 
 async function readFile(path: string): Promise<string[]> {
