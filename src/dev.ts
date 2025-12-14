@@ -1,66 +1,26 @@
 import * as fs from 'node:fs';
-import * as readline from 'node:readline';
-import { Node } from './models/Node';
 import { readGedcom } from 'read-gedcom';
+import { extractPersonData, personToMarkdown } from './utils/gedcom';
 
 async function main() {
-    const lines: string[] = await readFile('src/sample-family-tree.ged')
+    const buffer = fs.readFileSync('src/sample-family-tree.ged');
+    const gedcom = readGedcom(buffer.buffer as ArrayBuffer);
+    const individuals = gedcom.getIndividualRecord();
 
-    const nodes: Node[] = parseGedcom(lines);
-    // console.log(nodes);
-
-    fs.readFile('src/sample-family-tree.ged', (error, buffer) => {
-        if (error)
-            throw error;
-
-        const gedcom = readGedcom(buffer.buffer as ArrayBuffer);
-
-        const family = gedcom.getFamilyRecord('@F1@');
-        const husbandParts = family.getHusband().getIndividualRecord().getName().valueAsParts()
-        const husbandName = husbandParts.at(0)?.filter(Boolean).join(' ') ?? ''; // to exclude undefined suffix
-        console.log(husbandName);
-    });
-}
-
-async function readFile(path: string): Promise<string[]> {
-    const lines: string[] = [];
-
-    const stream = fs.createReadStream(path, { encoding: 'utf-8' });
-
-    const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
-
-    for await (const line of rl) {
-        lines.push(line);
+    const outputDir = 'output';
+    if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir);
     }
 
-    return lines;
-}
+    for (const individual of individuals.arraySelect()) {
+        const person = extractPersonData(individual);
+        const markdown = personToMarkdown(person);
 
-function parseGedcom(lines: string[]): Node[] {
-    const nodes: Node[] = [];
+        const fileName = `${person.id.replace(/[@]/g, '')}.md`;
+        fs.writeFileSync(`${outputDir}/${fileName}`, markdown, 'utf-8');
 
-    for (const line of lines) {
-        const split = line.trim().split(/\s+/);
-        if (split.length === 0)
-            continue;
-
-        if (!split[0])
-            continue;
-        const levelStr: string = split[0];
-        const level: number = Number.parseInt(levelStr);
-
-        if (!split[1])
-            continue;
-        const tag: string = split[1];
-
-        if (!split[2])
-            continue;
-        const payload: string = split.slice(2).join(' ');
-
-        nodes.push(new Node(level, tag, payload));
+        console.log(`Created: ${fileName}`);
     }
-
-    return nodes;
 }
 
 void (async () => {
